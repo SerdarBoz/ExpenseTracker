@@ -1,72 +1,88 @@
-const expenseName = document.getElementById("expense-name");
-const expenseAmount = document.getElementById("expense-amount");
-const expenseCategory = document.getElementById("expense-category");
-const addExpenseButton = document.getElementById("add-expense");
-const expensesList = document.getElementById("expenses");
-const totalDisplay = document.getElementById("total");
-const filterCategory = document.getElementById("filter-category");
+let totalAmount = document.getElementById("total-amount");
+let userAmount = document.getElementById("user-amount");
+const checkAmountButton = document.getElementById("check-amount");
+const totalAmountButton = document.getElementById("total-amount-button");
+const productTitle = document.getElementById("product-title");
+const errorMessage = document.getElementById("budget-error");
+const productTitleError = document.getElementById("product-title-error");
+const productCostError = document.getElementById("product-cost-error");
+const amount = document.getElementById("amount");
+const expenditureValue = document.getElementById("expenditure-value");
+const balanceValue = document.getElementById("balance-amount");
+const list = document.getElementById("list");
+let tempAmount = 0;
 
-let expenses = [];
-
-function addExpense() {
-  const name = expenseName.value;
-  const amount = parseFloat(expenseAmount.value);
-  const category = expenseCategory.value;
-
-  if (!name || isNaN(amount) || amount <= 0) {
-    alert("Please enter valid expense details.");
-    return;
+totalAmountButton.addEventListener("click", () => {
+  tempAmount = totalAmount.value;
+  if (tempAmount === "" || tempAmount < 0) {
+    errorMessage.classList.remove("hide");
+  } else {
+    errorMessage.classList.add("hide");
+    amount.innerHTML = tempAmount;
+    balanceValue.innerText = tempAmount - expenditureValue.innerText;
+    totalAmount.value = "";
   }
+});
 
-  const expense = { name, amount, category };
-  expenses.push(expense);
-
-  updateExpenseList();
-  updateTotal();
-
-  expenseName.value = "";
-  expenseAmount.value = "";
-}
-
-function updateExpenseList() {
-  const selectedCategory = filterCategory.value;
-
-  expensesList.innerHTML = "";
-
-  const filteredExpenses = selectedCategory === "All"
-    ? expenses
-    : expenses.filter(expense => expense.category === selectedCategory);
-
-  filteredExpenses.forEach((expense, index) => {
-    const li = document.createElement("li");
-    li.innerHTML = `
-      ${expense.name} (${expense.category}): €${expense.amount.toFixed(2)}
-      <button onclick="deleteExpense(${index})">Delete</button>
-    `;
-    expensesList.appendChild(li);
+const disableButtons = (bool) => {
+  let editButtons = document.getElementsByClassName("edit");
+  Array.from(editButtons).forEach((element) => {
+    element.disabled = bool;
   });
-}
+};
 
-function updateTotal() {
-  const selectedCategory = filterCategory.value;
+const modifyElement = (element, edit = false) => {
+  let parentDiv = element.parentElement;
+  let currentBalance = balanceValue.innerText;
+  let currentExpense = expenditureValue.innerText;
+  let parentAmount = parentDiv.querySelector(".amount").innerText;
+  if (edit) {
+    let parentText = parentDiv.querySelector(".product").innerText;
+    productTitle.value = parentText;
+    userAmount.value = parentAmount;
+    disableButtons(true);
+  }
+  balanceValue.innerText = parseInt(currentBalance) + parseInt(parentAmount);
+  expenditureValue.innerText =
+    parseInt(currentExpense) - parseInt(parentAmount);
+  parentDiv.remove();
+};
 
-  const filteredExpenses = selectedCategory === "All"
-    ? expenses
-    : expenses.filter(expense => expense.category === selectedCategory);
+const listCreator = (expenseName, expenseValue) => {
+  let sublistContent = document.createElement("div");
+  sublistContent.classList.add("sublist-content", "flex-space");
+  list.appendChild(sublistContent);
+  sublistContent.innerHTML = `<p class="product">${expenseName}</p><p class="amount">${expenseValue}</p>`;
+  let editButton = document.createElement("button");
+  editButton.classList.add("fa-solid", "fa-pen-to-square", "edit");
+  editButton.style.fontSize = "1.2em";
+  editButton.addEventListener("click", () => {
+    modifyElement(editButton, true);
+  });
+  let deleteButton = document.createElement("button");
+  deleteButton.classList.add("fa-solid", "fa-trash-can", "delete");
+  deleteButton.style.fontSize = "1.2em";
+  deleteButton.addEventListener("click", () => {
+    modifyElement(deleteButton);
+  });
+  sublistContent.appendChild(editButton);
+  sublistContent.appendChild(deleteButton);
+  document.getElementById("list").appendChild(sublistContent);
+};
 
-  const total = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-  totalDisplay.textContent = total.toFixed(2);
-}
 
-function deleteExpense(index) {
-  expenses.splice(index, 1);
-  updateExpenseList();
-  updateTotal();
-}
-
-addExpenseButton.addEventListener("click", addExpense);
-
-filterCategory.addEventListener("change", () => {
-  updateExpenseList();
-  updateTotal();
+checkAmountButton.addEventListener("click", () => {
+  if (!userAmount.value || !productTitle.value) {
+    productTitleError.classList.remove("hide");
+    return false;
+  }
+  disableButtons(false);
+  let expenditure = parseInt(userAmount.value);
+  let sum = parseInt(expenditureValue.innerText) + expenditure;
+  expenditureValue.innerText = sum;
+  const totalBalance = tempAmount - sum;
+  balanceValue.innerText = totalBalance;
+  listCreator(productTitle.value, userAmount.value);
+  productTitle.value = "";
+  userAmount.value = "";
 });
